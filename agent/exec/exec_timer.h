@@ -16,9 +16,9 @@ typedef struct {
  * @brief 创建定时器
  *
  * @param config 配置
- * @return agent_timer_handle
+ * @return lean_agent_timer_handle
  */
-bool agent_timer_create(lean_timer_config* config);
+bool lean_agent_timer_create(lean_timer_config* config);
 
 /**
  * @brief 处理 JSON 命令创建定时器
@@ -27,4 +27,4 @@ bool agent_timer_create(lean_timer_config* config);
  * @param json_item JSON 配置项
  * @param root 返回结果
  */
-void agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root);
+void lean_agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root);

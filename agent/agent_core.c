@@ -280,7 +280,7 @@ static void on_agent_peform_exec(_lean_agent_handle* hd, agent_core_queue* queue
 
     if (timer_item != NULL && cJSON_GetArraySize(timer_item)) {
       dialogue = false;
-      agent_timer_handle_json_cmd(hd->config.skill, timer_item, root);
+      lean_agent_timer_handle_json_cmd(hd->config.skill, timer_item, root);
     }
 
     if (dialogue) {

@@ -28,7 +28,7 @@ static int chat(int argc, char** argv) {
   return 0;
 }
 
-void cmd_register_chat(lean_cmd_chat_pipeline_cb cb) {
+void lean_cmd_register_chat(lean_cmd_chat_pipeline_cb cb) {
   chat_args.user_content = arg_str1(NULL, NULL, "<content>", "Content of the conversation");
   chat_args.end          = arg_end(1);
 

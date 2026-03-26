@@ -7,7 +7,7 @@
 
 **轻量级嵌入式 AI Agent 框架**
 
-<img src="./assest/logo.png" alt="logo" style="zoom:25%;" />
+<img src="./assest/logo.png" alt="logo" style="zoom:10%;" />
 
 ---
 

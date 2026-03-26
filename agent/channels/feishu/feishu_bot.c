@@ -52,9 +52,9 @@ typedef struct {
 
 typedef struct {
   lean_agent_channel channel;
-  char                    chat_id[64];
-  char                    msg_id[64];
-  uint32_t                access_time;
+  char               chat_id[64];
+  char               msg_id[64];
+  uint32_t           access_time;
 } session_item_t;
 
 typedef struct {

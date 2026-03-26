@@ -5,21 +5,21 @@
 #include "string.h"
 #include "esp_timer.h"
 
-#define TAG              "agent_timer"
+#define TAG              "lean_agent_timer"
 #define AGENT_RETURN_KEY "tm_res"
 
 typedef struct {
   lean_timer_config  config;
   esp_timer_handle_t timer;
-} _agent_timer_handle;
+} _lean_agent_timer_handle;
 
 /**
  * @brief 定时器回调函数
  *
  * @param arg
  */
-static void agent_timer_callback(void* arg) {
-  _agent_timer_handle* hd = (_agent_timer_handle*)arg;
+static void lean_agent_timer_callback(void* arg) {
+  _lean_agent_timer_handle* hd = (_lean_agent_timer_handle*)arg;
 
   LEAN_INFO(TAG, "Timer [%s] expired, executing func",
             hd->config.name ? hd->config.name : "noname");
@@ -37,19 +37,19 @@ static void agent_timer_callback(void* arg) {
 /**
  * @brief 创建定时器
  */
-bool agent_timer_create(lean_timer_config* config) {
+bool lean_agent_timer_create(lean_timer_config* config) {
   if (NULL == config || config->delay_sec <= 0) {
     LEAN_ERROR(TAG, "Invalid config");
     return false;
   }
 
-  _agent_timer_handle* hd = malloc(sizeof(_agent_timer_handle));
+  _lean_agent_timer_handle* hd = malloc(sizeof(_lean_agent_timer_handle));
   if (NULL == hd) {
     LEAN_ERROR(TAG, "Malloc failed");
     return false;
   }
 
-  memset(hd, 0, sizeof(_agent_timer_handle));
+  memset(hd, 0, sizeof(_lean_agent_timer_handle));
   hd->config      = *config;
   hd->config.name = strdup(config->name);
 
@@ -60,10 +60,10 @@ bool agent_timer_create(lean_timer_config* config) {
 
   // 创建 esp_timer
   esp_timer_create_args_t timer_args = {
-    .callback              = agent_timer_callback,
+    .callback              = lean_agent_timer_callback,
     .arg                   = hd,
     .dispatch_method       = ESP_TIMER_TASK,
-    .name                  = hd->config.name ? hd->config.name : "agent_timer",
+    .name                  = hd->config.name ? hd->config.name : "lean_agent_timer",
     .skip_unhandled_events = false,
   };
 
@@ -97,7 +97,7 @@ bool agent_timer_create(lean_timer_config* config) {
 /**
  * @brief 处理 JSON 命令创建定时器
  */
-void agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root) {
+void lean_agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root) {
   bool res = false;
 
   if (NULL == json_item) {
@@ -139,7 +139,7 @@ void agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSO
   config.skill             = skill;
 
   // 创建定时器
-  res = agent_timer_create(&config);
+  res = lean_agent_timer_create(&config);
 
   // 返回结果
   if (root) {

@@ -164,5 +164,5 @@ void app_main(void) {
 
   console_init();
   cmd_register_wifi(on_wifi_event);
-  cmd_register_chat(on_console_chat);
+  lean_cmd_register_chat(on_console_chat);
 }

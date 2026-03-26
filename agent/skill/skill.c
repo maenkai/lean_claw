@@ -111,17 +111,6 @@ bool lean_skill_param_boolean_get(const lean_skill_input* input, int index) {
 }
 
 /**
- * @brief 释放函数资源
- *
- * @param func
- */
-void lean_skill_func_delete(void* func) {
-  if (func) {
-    cJSON_Delete(func);
-  }
-}
-
-/**
  * @brief 创建一个结果对象,用户主动回复数据
  *
  * @param id

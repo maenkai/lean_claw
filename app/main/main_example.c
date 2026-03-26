@@ -21,8 +21,8 @@
 #include "feishu_bot.h"
 
 #define TAG "main_example"
-static esp_timer_handle_t  s_network_timer_handle = NULL;
-static lean_skill_handle  s_example_agent        = NULL;
+static esp_timer_handle_t       s_network_timer_handle = NULL;
+static lean_skill_handle        s_example_agent        = NULL;
 static lean_feishu_bot_handle_t s_example_feishu_bot   = NULL;
 
 enum example_skill_id {
@@ -59,9 +59,9 @@ static bool on_example_skill_exec(const lean_skill_input* input, lean_skill_outp
     }
 
     case EXAMPLE_SKILL_THREAD_PS: {
-      lean_thread_node node        = agent_core_get_thread_node(s_example_agent);
-      cJSON*            object      = lean_thread_get_list_to_json(node);
-      char*             json_string = cJSON_PrintUnformatted(object);
+      lean_thread_node node        = lean_agent_get_thread_node(s_example_agent);
+      cJSON*           object      = lean_thread_get_list_to_json(node);
+      char*            json_string = cJSON_PrintUnformatted(object);
       lean_skill_result_value_string_append(output, json_string);
       cJSON_free(json_string);
       cJSON_Delete(object);
@@ -86,13 +86,13 @@ static void on_network_connected_timer(void* priv_data) {
       .api_key = CONFIG_LLM_PRIVATE_API_KEY,
       .model   = CONFIG_LLM_MODEL_NAME,
     };
-    lean_agent_core_config agent_config = {
+    lean_agent_config agent_config = {
       agent_config.llm   = lean_llm_access_create(LLM_ACCESS_TYPE_DEEPSEEK, &llm_config),
       agent_config.skill = lean_skill_create(on_example_skill_exec, NULL)
     };
     lean_skill_append(agent_config.skill, example_skill, sizeof(example_skill) / sizeof(lean_skill_config));
     lean_skill_append(agent_config.skill, tool_collection_config_get(), tool_collection_counts_get());
-    s_example_agent = lean_agent_core_create(&agent_config);
+    s_example_agent = lean_agent_create(&agent_config);
   }
 
   if (strlen(CONFIG_FEISHU_CRED_APPID) == 0 || strlen(CONFIG_FEISHU_CRED_APPSEC) == 0) {
@@ -121,12 +121,12 @@ static void on_console_chat(const char* data, int length) {
     return;
   }
 
-  static lean_agent_core_channel example_cli_channel = NULL;
+  static lean_agent_channel example_cli_channel = NULL;
   if (NULL == example_cli_channel) {
-    example_cli_channel = lean_agent_core_channel_create(s_example_agent, "console", NULL, NULL, false);
+    example_cli_channel = lean_agent_channel_create(s_example_agent, "console", NULL, NULL, false);
   }
 
-  agent_core_send_message(s_example_agent, example_cli_channel, data);
+  lean_agent_send_message(s_example_agent, example_cli_channel, data);
 }
 
 /**

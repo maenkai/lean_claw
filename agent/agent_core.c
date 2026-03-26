@@ -25,24 +25,24 @@
 #define AGENT_CORE_EXEC_TIMEOUT      (30 * 1000)
 
 typedef struct {
-  bool                       sub_all;
-  char                       name[16];
-  lean_agent_core_llm_rsp_cb user_cb;
-  void*                      user_data;
-} _lean_agent_core_channel;
+  bool                  sub_all;
+  char                  name[16];
+  lean_agent_llm_rsp_cb user_cb;
+  void*                 user_data;
+} _lean_agent_channel;
 
 typedef struct {
-  lean_agent_core_state           state;
-  lean_agent_core_config          config;
-  QueueHandle_t                   queue_user;  // 用户接收消息对列
-  QueueHandle_t                   queue_agent; // agnet的消息对列
-  lean_thread_node                thread;
-  lean_scheduler_node             sche;
-  lean_utils_list_node            channel_list;
-  const _lean_agent_core_channel* channel_user;
-  void*                           priv_data;
-  uint64_t                        busy_last_time_sec;
-} _lean_agent_core_handle;
+  lean_agent_state           state;
+  lean_agent_config          config;
+  QueueHandle_t              queue_user;  // 用户接收消息对列
+  QueueHandle_t              queue_agent; // agnet的消息对列
+  lean_thread_node           thread;
+  lean_scheduler_node        sche;
+  lean_utils_list_node       channel_list;
+  const _lean_agent_channel* channel_user;
+  void*                      priv_data;
+  uint64_t                   busy_last_time_sec;
+} _lean_agent_handle;
 
 typedef enum {
   AGENT_QUEUE_TYPE_INIT,
@@ -57,11 +57,11 @@ typedef struct {
   agent_queue_type type;
   union {
     struct {
-      _lean_agent_core_channel* channel;
+      _lean_agent_channel* channel;
     } add_channel;
 
     struct {
-      _lean_agent_core_channel* channel;
+      _lean_agent_channel* channel;
     } del_channel;
 
     struct {
@@ -70,14 +70,14 @@ typedef struct {
     } llm2agent;
 
     struct {
-      _lean_agent_core_channel* channel;
-      char*                     msg_ptr;
-      int                       msg_len;
+      _lean_agent_channel* channel;
+      char*                msg_ptr;
+      int                  msg_len;
     } user2llm;
   } argv;
 } agent_core_queue;
 
-static const _lean_agent_core_channel s_local_channel = { .name = "Agent" };
+static const _lean_agent_channel s_local_channel = { .name = "Agent" };
 
 /**
  * @brief 获取声明的提示词
@@ -133,7 +133,7 @@ static const char* agent_prompter_reference_get(void) {
  * @param hd
  * @param msg
  */
-static bool agent_send_queue(_lean_agent_core_handle* hd, agent_core_queue* queue_cmd, bool agent) {
+static bool agent_send_queue(_lean_agent_handle* hd, agent_core_queue* queue_cmd, bool agent) {
   QueueHandle_t queue = agent ? hd->queue_agent : hd->queue_user;
   if (NULL == queue || NULL == queue_cmd) {
     return false;
@@ -159,10 +159,10 @@ static void on_llm_response(lean_llm_error_code err_code, lean_llm_access_messag
     return;
   }
 
-  _lean_agent_core_handle* hd        = (_lean_agent_core_handle*)priv_data;
-  agent_core_queue         queue_cmd = { .type = AGENT_QUEUE_TYPE_LLM_TO_AGENT };
-  queue_cmd.argv.llm2agent.content   = malloc(sizeof(cJSON*) * counts);
-  queue_cmd.argv.llm2agent.counts    = 0;
+  _lean_agent_handle* hd           = (_lean_agent_handle*)priv_data;
+  agent_core_queue    queue_cmd    = { .type = AGENT_QUEUE_TYPE_LLM_TO_AGENT };
+  queue_cmd.argv.llm2agent.content = malloc(sizeof(cJSON*) * counts);
+  queue_cmd.argv.llm2agent.counts  = 0;
 
   for (int i = 0; i < counts; i++) {
     if (message[i].role == LLM_ACCESS_ROLE_USER) {
@@ -189,7 +189,7 @@ static void on_llm_response(lean_llm_error_code err_code, lean_llm_access_messag
  *
  * @param hd
  */
-static void on_agent_init(_lean_agent_core_handle* hd) {
+static void on_agent_init(_lean_agent_handle* hd) {
   const char* tip              = "#技能表\r\n";
   const char* system_prompter  = agent_prompter_reference_get();
   char*       skill_prompter   = lean_skill_get_jsonstring(hd->config.skill);
@@ -224,7 +224,7 @@ static void on_agent_init(_lean_agent_core_handle* hd) {
  * @param hd
  * @param message
  */
-static void agent_message_notify_channel(_lean_agent_core_handle* hd, const char* message) {
+static void agent_message_notify_channel(_lean_agent_handle* hd, const char* message) {
   if (hd->channel_user == &s_local_channel) {
     return;
   }
@@ -232,7 +232,7 @@ static void agent_message_notify_channel(_lean_agent_core_handle* hd, const char
   LEAN_WARN(TAG, "[LLM -> User(%s)] %s", hd->channel_user->name, message);
 
   lean_utils_list_foreach(hd->channel_list, channel_item, {
-    _lean_agent_core_channel* channel = lean_utils_list_item_data_get(channel_item);
+    _lean_agent_channel* channel = lean_utils_list_item_data_get(channel_item);
     if (channel != hd->channel_user && !channel->sub_all) {
       continue;
     }
@@ -241,7 +241,7 @@ static void agent_message_notify_channel(_lean_agent_core_handle* hd, const char
       continue;
     }
 
-    channel->user_cb(hd, (const lean_agent_core_channel)hd->channel_user, message, channel->user_data);
+    channel->user_cb(hd, (const lean_agent_channel)hd->channel_user, message, channel->user_data);
   })
 }
 
@@ -251,7 +251,7 @@ static void agent_message_notify_channel(_lean_agent_core_handle* hd, const char
  * @param hd
  * @param message
  */
-static void on_agent_peform_exec(_lean_agent_core_handle* hd, agent_core_queue* queue_cmd) {
+static void on_agent_peform_exec(_lean_agent_handle* hd, agent_core_queue* queue_cmd) {
   bool   dialogue = true;
   cJSON* root     = cJSON_CreateObject();
   cJSON* func_res = cJSON_CreateArray();
@@ -322,7 +322,7 @@ static void on_agent_peform_exec(_lean_agent_core_handle* hd, agent_core_queue* 
  * @param hd
  * @param queue_cmd
  */
-static void on_agent_send_user_message(_lean_agent_core_handle* hd, agent_core_queue* queue_cmd) {
+static void on_agent_send_user_message(_lean_agent_handle* hd, agent_core_queue* queue_cmd) {
   hd->state                        = AGENT_CORE_STATE_ON_BUSY;
   hd->busy_last_time_sec           = esp_timer_get_time() / 1000000;
   lean_llm_access_message user_msg = { 0 };
@@ -340,9 +340,9 @@ static void on_agent_send_user_message(_lean_agent_core_handle* hd, agent_core_q
  * @param argv
  */
 static void agent_thread(void* argv) {
-  _lean_agent_core_handle* hd = (_lean_agent_core_handle*)argv;
-  agent_core_queue         queue_cmd;
-  bool                     running = true;
+  _lean_agent_handle* hd = (_lean_agent_handle*)argv;
+  agent_core_queue    queue_cmd;
+  bool                running = true;
 
   while (running) {
     bool has_recv = false;
@@ -414,16 +414,16 @@ static void agent_thread(void* argv) {
  * @brief 创建一个智能体
  *
  * @param config
- * @return lean_agent_core_handle
+ * @return lean_agent_handle
  */
-lean_agent_core_handle lean_agent_core_create(lean_agent_core_config* config) {
-  _lean_agent_core_handle* hd = calloc(1, sizeof(_lean_agent_core_handle));
-  hd->config                  = *config;
-  hd->queue_user              = xQueueCreate(AGENT_CORE_QUEUE_USER_SIZE, sizeof(agent_core_queue));
-  hd->queue_agent             = xQueueCreate(AGENT_CORE_QUEUE_AGENT_SIZE, sizeof(agent_core_queue));
-  hd->thread                  = lean_thread_node_create(hd->config.skill);
-  hd->sche                    = lean_scheduler_create_node(hd->config.skill, NULL);
-  hd->channel_list            = lean_utils_list_node_create(false);
+lean_agent_handle lean_agent_create(lean_agent_config* config) {
+  _lean_agent_handle* hd = calloc(1, sizeof(_lean_agent_handle));
+  hd->config             = *config;
+  hd->queue_user         = xQueueCreate(AGENT_CORE_QUEUE_USER_SIZE, sizeof(agent_core_queue));
+  hd->queue_agent        = xQueueCreate(AGENT_CORE_QUEUE_AGENT_SIZE, sizeof(agent_core_queue));
+  hd->thread             = lean_thread_node_create(hd->config.skill);
+  hd->sche               = lean_scheduler_create_node(hd->config.skill, NULL);
+  hd->channel_list       = lean_utils_list_node_create(false);
 
   if (hd->queue_user == NULL) {
     LEAN_ERROR(TAG, "Create User Queue failed!");
@@ -464,8 +464,8 @@ fail:
  * @param hd
  * @param msg
  */
-void agent_core_send_message(lean_agent_core_handle hd, lean_agent_core_channel channel, const char* msg) {
-  _lean_agent_core_handle* core_hd = (_lean_agent_core_handle*)hd;
+void lean_agent_send_message(lean_agent_handle hd, lean_agent_channel channel, const char* msg) {
+  _lean_agent_handle* core_hd = (_lean_agent_handle*)hd;
   if (core_hd->queue_user == NULL || core_hd->queue_agent == NULL || channel == NULL) {
     return;
   }
@@ -485,8 +485,8 @@ void agent_core_send_message(lean_agent_core_handle hd, lean_agent_core_channel 
  * @param hd
  * @return lean_thread_node
  */
-lean_thread_node agent_core_get_thread_node(lean_agent_core_handle hd) {
-  _lean_agent_core_handle* core_hd = (_lean_agent_core_handle*)hd;
+lean_thread_node lean_agent_get_thread_node(lean_agent_handle hd) {
+  _lean_agent_handle* core_hd = (_lean_agent_handle*)hd;
   return core_hd->thread;
 }
 
@@ -497,16 +497,16 @@ lean_thread_node agent_core_get_thread_node(lean_agent_core_handle hd) {
  * @param name 名称
  * @param cb 接收回调
  * @param sub_all_channel = true时,非回复本通道的消息也能接收到
- * @return lean_agent_core_channel
+ * @return lean_agent_channel
  */
-lean_agent_core_channel lean_agent_core_channel_create(lean_agent_core_handle hd, const char* name, lean_agent_core_llm_rsp_cb user_cb, void* user_data,
-                                                       bool sub_all_channel) {
-  _lean_agent_core_handle* core_hd = (_lean_agent_core_handle*)hd;
+lean_agent_channel lean_agent_channel_create(lean_agent_handle hd, const char* name, lean_agent_llm_rsp_cb user_cb, void* user_data,
+                                             bool sub_all_channel) {
+  _lean_agent_handle* core_hd = (_lean_agent_handle*)hd;
   if (core_hd->queue_user == NULL || core_hd->queue_agent == NULL) {
     return NULL;
   }
 
-  _lean_agent_core_channel* channel = calloc(1, sizeof(_lean_agent_core_channel));
+  _lean_agent_channel* channel = calloc(1, sizeof(_lean_agent_channel));
   if (NULL == channel) {
     return NULL;
   }
@@ -529,7 +529,7 @@ lean_agent_core_channel lean_agent_core_channel_create(lean_agent_core_handle hd
  *
  * @param ch
  */
-void lean_agent_core_channel_delete(lean_agent_core_handle hd, lean_agent_core_channel* ch) {
+void lean_agent_channel_delete(lean_agent_handle hd, lean_agent_channel* ch) {
   if (ch == NULL || *ch == NULL) {
     return;
   }
@@ -544,8 +544,8 @@ void lean_agent_core_channel_delete(lean_agent_core_handle hd, lean_agent_core_c
  * @brief 获取智能体当前的状态
  *
  * @param hd
- * @return lean_agent_core_state
+ * @return lean_agent_state
  */
-lean_agent_core_state lean_agent_core_state_get(lean_agent_core_handle hd) {
-  return ((_lean_agent_core_handle*)hd)->state;
+lean_agent_state lean_agent_state_get(lean_agent_handle hd) {
+  return ((_lean_agent_handle*)hd)->state;
 }

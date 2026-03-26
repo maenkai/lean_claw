@@ -12,7 +12,7 @@ typedef void* lean_feishu_bot_handle_t;
  * @param app_secret 飞书的appsecret
  * @return lean_feishu_bot_ctx_t*
  */
-lean_feishu_bot_handle_t lean_feishu_bot_create(lean_agent_core_handle agent, const char* app_id, const char* app_secret);
+lean_feishu_bot_handle_t lean_feishu_bot_create(lean_agent_handle agent, const char* app_id, const char* app_secret);
 
 /**
  * @brief 启动飞书机器人

@@ -7,8 +7,8 @@
 
 // 链表项内部结构
 typedef struct _lean_utils_list_item_struct {
-  void*                           data;      // 数据指针
-  bool                            need_free; // 是否需要释放
+  void*                                data;      // 数据指针
+  bool                                 need_free; // 是否需要释放
   struct _lean_utils_list_item_struct* next;      // 下一个节点
 } lean_utils_list_item_struct;
 
@@ -16,8 +16,8 @@ typedef struct _lean_utils_list_item_struct {
 typedef struct _lean_utils_list_node_struct {
   lean_utils_list_item_struct* head;         // 头指针
   lean_utils_list_item_struct* tail;         // 尾指针
-  SemaphoreHandle_t       mutex;        // FreeRTOS 互斥锁
-  bool                    mutex_enable; // 是否启用锁
+  SemaphoreHandle_t            mutex;        // FreeRTOS 互斥锁
+  bool                         mutex_enable; // 是否启用锁
 } lean_utils_list_node_struct;
 
 // 创建链表节点

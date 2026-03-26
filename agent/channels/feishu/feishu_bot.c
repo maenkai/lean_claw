@@ -51,7 +51,7 @@ typedef struct {
 } ws_frame_t;
 
 typedef struct {
-  lean_agent_core_channel channel;
+  lean_agent_channel channel;
   char                    chat_id[64];
   char                    msg_id[64];
   uint32_t                access_time;
@@ -77,7 +77,7 @@ typedef struct {
   ws_frame_t                    ws_ping;
 
   /* Agent Core integration */
-  lean_agent_core_handle agent_core;
+  lean_agent_handle agent_core;
 
   /* Session cache */
   session_item_t* session_cache;
@@ -251,7 +251,7 @@ static bool dedup_check_and_record(lean_feishu_bot_ctx_t* ctx, const char* messa
   return false;
 }
 
-static const char* session_find_chat_id(lean_feishu_bot_ctx_t* ctx, lean_agent_core_channel channel) {
+static const char* session_find_chat_id(lean_feishu_bot_ctx_t* ctx, lean_agent_channel channel) {
   for (size_t i = 0; i < ctx->session_cache_size; i++) {
     if (ctx->session_cache[i].channel == channel) {
       return ctx->session_cache[i].chat_id;
@@ -260,7 +260,7 @@ static const char* session_find_chat_id(lean_feishu_bot_ctx_t* ctx, lean_agent_c
   return NULL;
 }
 
-static void session_agent_response(lean_agent_core_handle agent, lean_agent_core_channel channel, const char* msg, void* priv_data) {
+static void session_agent_response(lean_agent_handle agent, lean_agent_channel channel, const char* msg, void* priv_data) {
   lean_feishu_bot_ctx_t* ctx = (lean_feishu_bot_ctx_t*)priv_data;
   if (!ctx)
     return;
@@ -302,7 +302,7 @@ static session_item_t* session_get_or_create(lean_feishu_bot_ctx_t* ctx, const c
   char channel_name[16];
   snprintf(channel_name, sizeof(channel_name), "fs_%.8s", chat_id);
 
-  lean_agent_core_channel ch = lean_agent_core_channel_create(
+  lean_agent_channel ch = lean_agent_channel_create(
     ctx->agent_core,
     channel_name,
     session_agent_response,
@@ -315,7 +315,7 @@ static session_item_t* session_get_or_create(lean_feishu_bot_ctx_t* ctx, const c
   }
 
   session_item_t* entry = &ctx->session_cache[ctx->session_idx];
-  lean_agent_core_channel_delete(ctx->agent_core, &entry->channel);
+  lean_agent_channel_delete(ctx->agent_core, &entry->channel);
   strncpy(entry->chat_id, chat_id, sizeof(entry->chat_id) - 1);
   entry->channel     = ch;
   entry->access_time = (uint32_t)esp_timer_get_time();
@@ -853,9 +853,9 @@ static void session_feishu_message_recv(lean_feishu_bot_ctx_t* ctx, cJSON* event
   }
 
   // 连续发内容的话就不引用,变成正常回复
-  if (lean_agent_core_state_get(ctx->agent_core) == AGENT_CORE_STATE_ON_IDLE) {
+  if (lean_agent_state_get(ctx->agent_core) == AGENT_CORE_STATE_ON_IDLE) {
     strncpy(session->msg_id, message_id, sizeof(session->msg_id) - 1);
-    agent_core_send_message(ctx->agent_core, session->channel, cleaned);
+    lean_agent_send_message(ctx->agent_core, session->channel, cleaned);
   } else {
     lean_feishu_bot_reply_message(ctx, message_id, "claw 忙碌中, 请稍后重试");
   }
@@ -1033,7 +1033,7 @@ static void feishu_thread(void* argv) {
   }
 }
 
-lean_feishu_bot_handle_t lean_feishu_bot_create(lean_agent_core_handle agent, const char* app_id, const char* app_secret) {
+lean_feishu_bot_handle_t lean_feishu_bot_create(lean_agent_handle agent, const char* app_id, const char* app_secret) {
   if (!app_id || !app_secret || !agent) {
     return NULL;
   }

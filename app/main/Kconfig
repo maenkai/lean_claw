@@ -1,0 +1,41 @@
+menu "Lean Agent Example Configuration"
+
+config ENABLE_TOOL_COLLECTION
+    bool "Enable Tool Collection"
+    default y
+    help
+        启用内置工具集合功能，包括IO操作、系统命令等
+
+config LLM_ACCESS_ID
+    int "LLM Access Type ID"
+    default 0
+    help
+        LLM 访问类型标识，用于指定使用哪种 LLM 服务接入方式
+        例如：0=DEEPSEEK, 1=QWEN, 2=OPENAI 等
+
+config LLM_MODEL_NAME
+    string "LLM Model Name"
+    default "deepseek-chat"
+    help
+        LLM 模型名称，用于指定具体使用的 AI 模型
+        例如：deepseek-chat, qwen-turbo, gpt-3.5-turbo 等
+
+config LLM_PRIVATE_API_KEY
+    string "LLM API Key"
+    default ""
+    help
+        LLM 服务的 API Key，用于访问深度求索等模型服务
+
+config FEISHU_CRED_APPID
+    string "Feishu App ID"
+    default ""
+    help
+        飞书机器人 App ID
+
+config FEISHU_CRED_APPSEC
+    string "Feishu App Secret"
+    default ""
+    help
+        飞书机器人 App Secret
+
+endmenu

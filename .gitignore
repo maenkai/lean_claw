@@ -1,0 +1,19 @@
+#app dir
+build
+sdkconfig
+sdkconfig.h
+sdkconfig.old
+sdkconfig.defaults.private
+managed_components
+dependencies.lock
+
+# IDE
+.vscode
+.espressif
+.env
+.env.private
+.env.private.sample
+.env.sample
+.env.private.sample
+.env.private
+.env

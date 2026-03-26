@@ -1,0 +1,16 @@
+# nvs need enough space to store two HTTPS cert
+# 0x6000   :   24K
+# 0x1000   :   04K
+# 0x2000   :   08K
+# 0x1000   :   04K
+# 0x20000  :  128K
+# 0x1F0000 : 1920K
+# 0x1F0000 : 1920K
+
+# Name,          Type, 	      SubType,        Offset,           Size, 	     Flags,
+nvs_keys,        data,          nvs_keys,       ,               0x1000,      encrypted
+otadata,  	     data,  	    ota,     	    ,        	    0x2000,
+phy_init, 	     data,  	    phy,     	    ,        	    0x1000,
+nvs,      	     data,  	    nvs,     	    ,        	    0x20000,　　　　　
+ota_0,    	     app,   	    ota_0,   	    ,        	    0x1E0000,
+ota_1,    	     app,   	    ota_1,   	    ,        	    0x1E0000,

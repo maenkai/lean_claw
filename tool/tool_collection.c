@@ -28,10 +28,10 @@ int tool_collection_counts_get(void) {
  * @return true
  * @return false
  */
-bool tool_collection_exec(const lean_skill_input* input, lean_skill_output* output, void* prov_data) {
+bool tool_collection_exec(const lean_exec_ctx* msg, const lean_exec_input* input, lean_exec_output* output, void* prov_data) {
   bool hadnle = false;
-  for (int i = 0; i < sizeof(s_tool_exec) / sizeof(lean_skill_exec_cb); i++) {
-    hadnle = s_tool_exec[i](input, output, prov_data);
+  for (int i = 0; i < sizeof(s_tool_exec) / sizeof(lean_exec_cb); i++) {
+    hadnle = s_tool_exec[i](msg, input, output, prov_data);
     if (hadnle) {
       break;
     }

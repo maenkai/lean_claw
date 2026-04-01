@@ -1,7 +1,7 @@
 #pragma once
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "skill.h"
+#include "executor.h"
 #include "cJSON.h"
 
 typedef void* lean_scheduler_node;
@@ -14,14 +14,13 @@ typedef void (*lean_scheduler_finish_cb)(int id, cJSON* res);
  * @param finish_cb 完成时的回调
  * @return lean_scheduler_node
  */
-lean_scheduler_node lean_scheduler_create_node(lean_skill_handle skill, lean_scheduler_finish_cb finish_cb);
+lean_scheduler_node lean_scheduler_create_node(lean_exec_handle exec, lean_scheduler_finish_cb finish_cb);
 
 /**
  * @brief 解析json并且创建定时任务
  *
  * @param node 添加到的节点
  * @param timer
- * @param skill
  * @param op_result
  */
 void lean_scheduler_handle_json_cmd(lean_scheduler_node node, cJSON* timer, cJSON* op_result);

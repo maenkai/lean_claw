@@ -1,15 +1,15 @@
 #pragma once
 #include "cJSON.h"
-#include "skill.h"
+#include "executor.h"
 
 /**
  * @brief 定时器配置
  */
 typedef struct {
-  char*             name;      // 定时器名称
-  cJSON*            func;      // 执行的指令数组
-  lean_skill_handle skill;     // 技能表
-  uint32_t          delay_sec; // 延迟秒数
+  char*            name;      // 定时器名称
+  cJSON*           func;      // 执行的指令数组
+  lean_exec_handle exec;      // 技能表
+  uint32_t         delay_sec; // 延迟秒数
 } lean_timer_config;
 
 /**
@@ -27,4 +27,4 @@ bool lean_agent_timer_create(lean_timer_config* config);
  * @param json_item JSON 配置项
  * @param root 返回结果
  */
-void lean_agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root);
+void lean_agent_timer_handle_json_cmd(lean_exec_handle exec, cJSON* json_item, cJSON* root);

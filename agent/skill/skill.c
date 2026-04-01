@@ -21,9 +21,8 @@
  */
 
 typedef struct {
-  void*              prov_data;
-  cJSON*             skill;
-  lean_skill_exec_cb cb;
+  const char* desc;
+  cJSON*      skill;
 } _lean_skill_handle;
 
 /**
@@ -31,27 +30,12 @@ typedef struct {
  *
  * @return lean_skill_handle
  */
-lean_skill_handle lean_skill_create(lean_skill_exec_cb cb, void* prov_data) {
+lean_skill_handle lean_skill_create(const char* desc) {
   _lean_skill_handle* hd = calloc(1, sizeof(_lean_skill_handle));
   hd->skill              = cJSON_CreateObject();
-  hd->prov_data          = prov_data;
-  hd->cb                 = cb;
+  hd->desc               = desc;
   cJSON_AddItemToObject(hd->skill, "skill", cJSON_CreateArray());
   return hd;
-}
-
-/**
- * @brief 执行skill
- *
- * @param hd
- * @param input
- * @param output
- * @return true
- * @return false
- */
-bool lean_skill_exec(lean_skill_handle hd, const lean_skill_input* input, lean_skill_output* output) {
-  _lean_skill_handle* core_hd = (_lean_skill_handle*)hd;
-  return core_hd->cb(input, output, core_hd->prov_data);
 }
 
 /**
@@ -86,79 +70,4 @@ void lean_skill_append(lean_skill_handle hd, const lean_skill_config* config, ui
 char* lean_skill_get_jsonstring(lean_skill_handle hd) {
   _lean_skill_handle* core_hd = (_lean_skill_handle*)hd;
   return cJSON_PrintUnformatted(core_hd->skill);
-}
-
-/**
- * @brief skill参数获取
- *
- * @param param
- */
-int lean_skill_param_size_get(const lean_skill_input* input) {
-  return cJSON_GetArraySize(input->param);
-}
-double lean_skill_param_double_get(const lean_skill_input* input, int index) {
-  return cJSON_GetNumberValue(cJSON_GetArrayItem(input->param, index));
-}
-int lean_skill_param_number_get(const lean_skill_input* input, int index) {
-  return cJSON_GetNumberValue(cJSON_GetArrayItem(input->param, index));
-}
-const char* lean_skill_param_string_get(const lean_skill_input* input, int index) {
-  return cJSON_GetStringValue(cJSON_GetArrayItem(input->param, index));
-}
-
-bool lean_skill_param_boolean_get(const lean_skill_input* input, int index) {
-  return cJSON_IsTrue(cJSON_GetArrayItem(input->param, index));
-}
-
-/**
- * @brief 创建一个结果对象,用户主动回复数据
- *
- * @param id
- * @param seq
- * @return cJSON*
- */
-void* lean_skill_result_object_create(uint32_t id, uint32_t seq) {
-  cJSON* res = cJSON_CreateObject();
-  cJSON_AddNumberToObject(res, "id", id);
-  cJSON_AddNumberToObject(res, "seq", seq);
-  cJSON_AddItemToObject(res, "val", cJSON_CreateArray());
-  return res;
-}
-
-/**
- * @brief 告知模型函数是否调用成功
- *
- * @param result
- */
-void lean_skill_result_set_success(lean_skill_output* output, bool boolean) {
-  if (output->res) {
-    cJSON_AddBoolToObject(output->res, "success", boolean);
-  }
-}
-
-/**
- * @brief 告知模型函数的返回结果
- *
- * @param output->res
- */
-int lean_skill_result_value_size_get(lean_skill_output* output) {
-  return cJSON_GetArraySize(cJSON_GetObjectItem(output->res, "val"));
-}
-
-void lean_skill_result_value_double_append(lean_skill_output* output, double number) {
-  cJSON* val = cJSON_GetObjectItem(output->res, "val");
-  cJSON_AddItemToArray(val, cJSON_CreateNumber(number));
-}
-void lean_skill_result_value_number_append(lean_skill_output* output, int number) {
-  cJSON* val = cJSON_GetObjectItem(output->res, "val");
-  cJSON_AddItemToArray(val, cJSON_CreateNumber(number));
-}
-void lean_skill_result_value_string_append(lean_skill_output* output, char* string) {
-  cJSON* val = cJSON_GetObjectItem(output->res, "val");
-  cJSON_AddItemToArray(val, cJSON_CreateString(string));
-}
-
-void lean_skill_result_value_boolean_append(lean_skill_output* output, bool boolean) {
-  cJSON* val = cJSON_GetObjectItem(output->res, "val");
-  cJSON_AddItemToArray(val, cJSON_CreateBool(boolean));
 }

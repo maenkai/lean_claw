@@ -265,7 +265,7 @@ static void on_agent_peform_exec(_lean_agent_handle* hd, agent_core_queue* queue
 
     if (func_item != NULL && cJSON_GetArraySize(func_item)) {
       dialogue = false;
-      lean_executor_function_running(func_item, hd->config.skill, func_res);
+      lean_exec_function_call(hd->config.exec, func_item, func_res);
     }
 
     if (thread_item != NULL && cJSON_GetArraySize(thread_item)) {
@@ -280,7 +280,7 @@ static void on_agent_peform_exec(_lean_agent_handle* hd, agent_core_queue* queue
 
     if (timer_item != NULL && cJSON_GetArraySize(timer_item)) {
       dialogue = false;
-      lean_agent_timer_handle_json_cmd(hd->config.skill, timer_item, root);
+      lean_agent_timer_handle_json_cmd(hd->config.exec, timer_item, root);
     }
 
     if (dialogue) {
@@ -421,9 +421,12 @@ lean_agent_handle lean_agent_create(lean_agent_config* config) {
   hd->config             = *config;
   hd->queue_user         = xQueueCreate(AGENT_CORE_QUEUE_USER_SIZE, sizeof(agent_core_queue));
   hd->queue_agent        = xQueueCreate(AGENT_CORE_QUEUE_AGENT_SIZE, sizeof(agent_core_queue));
-  hd->thread             = lean_thread_node_create(hd->config.skill);
-  hd->sche               = lean_scheduler_create_node(hd->config.skill, NULL);
+  hd->thread             = lean_thread_node_create(hd->config.exec);
+  hd->sche               = lean_scheduler_create_node(hd->config.exec, NULL);
   hd->channel_list       = lean_utils_list_node_create(false);
+
+  lean_exec_ctx ctx = { .agent = hd };
+  lean_exec_set_ctx(hd->config.exec, &ctx);
 
   if (hd->queue_user == NULL) {
     LEAN_ERROR(TAG, "Create User Queue failed!");

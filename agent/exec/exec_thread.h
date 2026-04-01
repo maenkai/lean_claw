@@ -1,6 +1,6 @@
 #pragma once
 #include "cJSON.h"
-#include "skill.h"
+#include "executor.h"
 
 typedef void* lean_thread_node;
 
@@ -9,7 +9,7 @@ typedef void* lean_thread_node;
  *
  * @return lean_thread_node
  */
-lean_thread_node lean_thread_node_create(lean_skill_handle skill);
+lean_thread_node lean_thread_node_create(lean_exec_handle exec);
 
 /**
  * @brief agent_executor_thread_create

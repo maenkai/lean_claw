@@ -45,9 +45,9 @@ static const lean_skill_config example_skill[] = {
  * @return true
  * @return false
  */
-static bool on_example_skill_exec(const lean_skill_input* input, lean_skill_output* output, void* prov_data) {
+static bool on_example_skill_exec(const lean_exec_ctx* msg, const lean_exec_input* input, lean_exec_output* output, void* prov_data) {
 #if CONFIG_ENABLE_TOOL_COLLECTION
-  if (tool_collection_exec(input, output, prov_data)) {
+  if (tool_collection_exec(msg, input, output, prov_data)) {
     return true;
   }
 #endif
@@ -62,14 +62,14 @@ static bool on_example_skill_exec(const lean_skill_input* input, lean_skill_outp
       lean_thread_node node        = lean_agent_get_thread_node(s_example_agent);
       cJSON*           object      = lean_thread_get_list_to_json(node);
       char*            json_string = cJSON_PrintUnformatted(object);
-      lean_skill_result_value_string_append(output, json_string);
+      lean_exec_result_value_string_append(output, json_string);
       cJSON_free(json_string);
       cJSON_Delete(object);
       break;
     }
   }
 
-  lean_skill_result_set_success(output, true);
+  lean_exec_result_set_success(output, true);
   return true;
 }
 
@@ -88,7 +88,8 @@ static void on_network_connected_timer(void* priv_data) {
     };
     lean_agent_config agent_config = {
       agent_config.llm   = lean_llm_access_create(LLM_ACCESS_TYPE_DEEPSEEK, &llm_config),
-      agent_config.skill = lean_skill_create(on_example_skill_exec, NULL)
+      agent_config.skill = lean_skill_create("example"),
+      agent_config.exec  = lean_exec_create(on_example_skill_exec, NULL)
     };
     lean_skill_append(agent_config.skill, example_skill, sizeof(example_skill) / sizeof(lean_skill_config));
     lean_skill_append(agent_config.skill, tool_collection_config_get(), tool_collection_counts_get());

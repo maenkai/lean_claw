@@ -1,5 +1,5 @@
 
-#include "skill.h"
+#include "executor.h"
 #define CONFIG_TOOL_CID_BASE (1000) // 避免和用户定义的id冲突,ID的起始为该id
 
 typedef enum {
@@ -23,11 +23,11 @@ static const lean_skill_config s_tool_skill[] = {
   { TOOL_CID_PWM_SET, "pwm fade set, using after pwm init", skill_param("i#speed_mode", "i#channel", "i#duty", "i#fade_time"), "void" }
 };
 
-bool tool_gpio_exec(const lean_skill_input* input, lean_skill_output* output, void* prov_data);
-bool tool_pwm_exec(const lean_skill_input* input, lean_skill_output* output, void* prov_data);
-bool tool_thread_exec(const lean_skill_input* input, lean_skill_output* output, void* prov_data);
+bool tool_gpio_exec(const lean_exec_ctx* msg, const lean_exec_input* input, lean_exec_output* output, void* prov_data);
+bool tool_pwm_exec(const lean_exec_ctx* msg, const lean_exec_input* input, lean_exec_output* output, void* prov_data);
+bool tool_thread_exec(const lean_exec_ctx* msg, const lean_exec_input* input, lean_exec_output* output, void* prov_data);
 
-static const lean_skill_exec_cb s_tool_exec[] = {
+static const lean_exec_cb s_tool_exec[] = {
   tool_gpio_exec,
   tool_pwm_exec,
   tool_thread_exec

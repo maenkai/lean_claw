@@ -7,7 +7,7 @@
 
 **Lightweight Embedded AI Agent Framework**
 
-<img src="./assest/logo.png" alt="logo" style="zoom:10%;" />
+<img src="./assest/mini_logo.jpg" alt="logo" style="zoom:50%;" />
 
 ---
 

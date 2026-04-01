@@ -30,7 +30,7 @@ typedef struct lean_scheduler_item {
 typedef struct {
   lean_scheduler_item*     head;
   esp_timer_handle_t       timer;
-  lean_skill_handle        skill;
+  lean_exec_handle         exec;
   SemaphoreHandle_t        mutex;
   uint32_t                 next_id;
   lean_scheduler_finish_cb cb;
@@ -156,7 +156,7 @@ static void check_and_trigger_sche(_lean_scheduler_node* node) {
       cJSON* result = node->cb ? cJSON_CreateObject() : NULL;
 
       // 执行定时任务
-      lean_executor_function_running(item->func, node->skill, result);
+      lean_exec_function_call(node->exec, item->func, result);
 
       // 调用完成回调
       if (node->cb) {
@@ -204,7 +204,7 @@ static void timer_callback(void* arg) {
  * @param skill
  * @return lean_scheduler_node
  */
-lean_scheduler_node lean_scheduler_create_node(lean_skill_handle skill, lean_scheduler_finish_cb finish_cb) {
+lean_scheduler_node lean_scheduler_create_node(lean_exec_handle exec, lean_scheduler_finish_cb finish_cb) {
   _lean_scheduler_node* node = (_lean_scheduler_node*)malloc(sizeof(_lean_scheduler_node));
   if (NULL == node) {
     return NULL;
@@ -212,7 +212,7 @@ lean_scheduler_node lean_scheduler_create_node(lean_skill_handle skill, lean_sch
 
   memset(node, 0, sizeof(_lean_scheduler_node));
   node->cb    = finish_cb;
-  node->skill = skill;
+  node->exec  = exec;
   node->mutex = xSemaphoreCreateMutex();
   if (node->mutex == NULL) {
     free(node);

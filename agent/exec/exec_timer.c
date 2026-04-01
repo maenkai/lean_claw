@@ -25,7 +25,7 @@ static void lean_agent_timer_callback(void* arg) {
             hd->config.name ? hd->config.name : "noname");
 
   // 执行指令
-  lean_executor_function_running(hd->config.func, hd->config.skill, NULL);
+  lean_exec_function_call(hd->config.exec, hd->config.func, NULL);
 
   // 清理资源
   free(hd->config.name);
@@ -97,7 +97,7 @@ bool lean_agent_timer_create(lean_timer_config* config) {
 /**
  * @brief 处理 JSON 命令创建定时器
  */
-void lean_agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item, cJSON* root) {
+void lean_agent_timer_handle_json_cmd(lean_exec_handle exec, cJSON* json_item, cJSON* root) {
   bool res = false;
 
   if (NULL == json_item) {
@@ -136,7 +136,7 @@ void lean_agent_timer_handle_json_cmd(lean_skill_handle skill, cJSON* json_item,
   config.name              = name_item ? name_item->valuestring : "timer";
   config.delay_sec         = delay_sec;
   config.func              = func_item;
-  config.skill             = skill;
+  config.exec             = exec;
 
   // 创建定时器
   res = lean_agent_timer_create(&config);

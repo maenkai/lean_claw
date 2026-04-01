@@ -1,11 +1,13 @@
 #pragma once
 #include "llm_access.h"
 #include "skill.h"
+#include "executor.h"
 #include "exec_thread.h"
 
 typedef struct {
   lean_llm_access_handle llm;
   lean_skill_handle      skill;
+  lean_exec_handle       exec;
 } lean_agent_config;
 
 typedef enum {

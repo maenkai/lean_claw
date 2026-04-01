@@ -11,10 +11,10 @@
 #define AGENT_THREAD_MIN_STACK_SIZE (1024 * 2)
 
 typedef struct {
-  bool              loop;
-  int               msleep;
-  lean_skill_handle skill;
-  cJSON*            func;
+  bool             loop;
+  int              msleep;
+  lean_exec_handle exec;
+  cJSON*           func;
 } lean_thread_param;
 
 typedef struct thread_list_item {
@@ -28,7 +28,7 @@ typedef struct {
   uint32_t          next_id;
   thread_list_item* head;
   SemaphoreHandle_t mutex;
-  lean_skill_handle skill;
+  lean_exec_handle  exec;
 } _lean_thread_node;
 
 /**
@@ -36,7 +36,7 @@ typedef struct {
  *
  * @return lean_thread_node
  */
-lean_thread_node lean_thread_node_create(lean_skill_handle skill) {
+lean_thread_node lean_thread_node_create(lean_exec_handle exec) {
   _lean_thread_node* manager = malloc(sizeof(_lean_thread_node));
   if (NULL == manager) {
     return NULL;
@@ -44,7 +44,7 @@ lean_thread_node lean_thread_node_create(lean_skill_handle skill) {
   manager->head    = NULL;
   manager->next_id = 1;
   manager->mutex   = xSemaphoreCreateRecursiveMutex();
-  manager->skill   = skill;
+  manager->exec    = exec;
   if (manager->mutex == NULL) {
     free(manager);
     return NULL;
@@ -97,7 +97,7 @@ static uint32_t add_thread_to_list(_lean_thread_node* node, TaskHandle_t hd, lea
 static void exec_thread(void* argv) {
   lean_thread_param* param = (lean_thread_param*)argv;
   while (param->loop) {
-    lean_executor_function_running(param->func, param->skill, NULL);
+    lean_exec_function_call(param->exec, param->func, NULL);
     vTaskDelay(param->msleep / portTICK_PERIOD_MS);
   }
 
@@ -129,7 +129,7 @@ int lean_thread_add(lean_thread_node node, const char* name, bool loop, uint32_t
   thread_param->loop       = loop;
   thread_param->msleep     = msleep;
   thread_param->func       = cJSON_Duplicate(func, true);
-  thread_param->skill      = ((_lean_thread_node*)node)->skill;
+  thread_param->exec       = ((_lean_thread_node*)node)->exec;
 
   if (stack_size <= AGENT_THREAD_MIN_STACK_SIZE) {
     stack_size = AGENT_THREAD_MIN_STACK_SIZE;
